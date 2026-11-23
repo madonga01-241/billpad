@@ -3,6 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="connect-src 'self' https://socialchain.app https://backend.appstudio-u7cm9zhmha0ruwv8.piappengine.com">
+<script src="https://sdk.minepi.com/pi-sdk.js"></script>
 <title>Billpad</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap">
 <style>
@@ -64,7 +66,7 @@ summary{font-weight:600;cursor:pointer;min-height:32px}
 <body>
 <main>
 <header>
- <div><h1>Bill<i>pad</i></h1><p class="tag" data-i="tag"></p></div>
+ <div><h1>Bill<i>pad</i></h1><p class="tag" data-i="tag"></p><p class="tag" id="who" hidden></p></div>
  <div class="lang" role="group" aria-label="Language"><button data-l="en">EN</button><button data-l="fr">FR</button></div>
 </header>
 
@@ -163,7 +165,22 @@ document.querySelectorAll(".lang button").forEach(b=>b.onclick=()=>{lang=b.datas
 document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>showTab(b.dataset.t));
 ["#c-amt","#c-from","#c-to"].forEach(s=>$(s).oninput=convert);
 $("#l-cur").onchange=ledger;$("#i-make").onclick=makeInvoice;
-ratesUI();text();convert();showTab("conv");
+const PI_LOGIN="https://backend.appstudio-u7cm9zhmha0ruwv8.piappengine.com/pi/auth/v1/login";
+const piState={session:null,user:null};
+async function piSignIn(){
+ if(!window.Pi)return;
+ try{
+  await Pi.init({version:"2.0"});
+  const a=await Pi.authenticate(["username"],function(){});
+  const r=await fetch(PI_LOGIN,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({accessToken:a.accessToken})});
+  if(!r.ok)return;
+  const d=await r.json();
+  if(!d||!d.user||!d.sessionToken)return;
+  piState.session=d.sessionToken;piState.user=d.user;
+  const w=$("#who");w.textContent="\u03c0 "+String(d.user.username||"");w.hidden=false;
+ }catch(e){}
+}
+ratesUI();text();convert();showTab("conv");piSignIn();
 </script>
 </body>
 </html>
