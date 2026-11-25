@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="connect-src 'self' https://socialchain.app https://backend.appstudio-u7cm9zhmha0ruwv8.piappengine.com">
+<meta http-equiv="Content-Security-Policy" content="connect-src 'self' https://socialchain.app https://backend.appstudio-u7cm9zhmha0ruwv8.piappengine.com https://open.er-api.com">
 <script src="https://sdk.minepi.com/pi-sdk.js"></script>
 <title>Billpad</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap">
@@ -85,9 +85,10 @@ summary{font-weight:600;cursor:pointer;min-height:32px}
  </div>
  <div class="big" aria-live="polite"><small id="c-line"></small><b id="c-out"></b></div>
  <div id="c-all"></div>
+ <p class="note" id="rs"></p>
  <details>
   <summary data-i="rates"></summary>
-  <p class="note" data-i="ratesNote"></p>
+  <p class="note" data-i="ratesNote"></p><button class="btn alt" id="rf" data-i="refresh"></button>
   <div class="rates" id="rates"></div>
  </details>
 </section>
@@ -118,8 +119,8 @@ summary{font-weight:600;cursor:pointer;min-height:32px}
 <script>
 const $=s=>document.querySelector(s);
 const T={
-en:{tag:"Price in your local currency, see it in Pi, track your income.",conv:"Convert",inv:"Invoice",led:"Ledger",amount:"Amount",from:"From",to:"To",rates:"Exchange rates (1 USD =)",ratesNote:"Rates are editable and not live. Enter your own before relying on them.",biz:"Your business",client:"Client",desc:"Description",cur:"Currency",alt:"Also show in",make:"Create invoice",save:"Save to ledger",invoice:"Invoice",scan:"Scan to pay",billed:"Billed",collected:"Collected",showin:"Show totals in",empty:"No invoices yet. Create one in the Invoice tab.",paid:"Paid",unpaid:"Unpaid",del:"Delete",needAmt:"Enter an amount greater than zero.",saved:"Saved to ledger.",total:"Total",to_:"Client",equiv:"Equivalent",all:"All conversions",markPaid:"Mark as paid",paidUndo:"Paid · tap to undo",share:"Share invoice",copied:"Invoice copied. Paste it in a message."},
-fr:{tag:"Fixez vos prix en monnaie locale, voyez-les en Pi, suivez vos revenus.",conv:"Convertir",inv:"Facture",led:"Carnet",amount:"Montant",from:"De",to:"Vers",rates:"Taux de change (1 USD =)",ratesNote:"Les taux sont modifiables et non actualisés. Saisissez les vôtres avant de vous y fier.",biz:"Votre commerce",client:"Client",desc:"Description",cur:"Devise",alt:"Afficher aussi en",make:"Créer la facture",save:"Enregistrer au carnet",invoice:"Facture",scan:"Scanner pour payer",billed:"Facturé",collected:"Encaissé",showin:"Totaux en",empty:"Aucune facture. Créez-en une dans l’onglet Facture.",paid:"Payée",unpaid:"Impayée",del:"Supprimer",needAmt:"Saisissez un montant supérieur à zéro.",saved:"Enregistrée au carnet.",total:"Total",to_:"Client",equiv:"Équivalent",all:"Toutes les conversions",markPaid:"Marquer comme payée",paidUndo:"Payée · toucher pour annuler",share:"Partager la facture",copied:"Facture copiée. Collez-la dans un message."}
+en:{tag:"Price in your local currency, see it in Pi, track your income.",conv:"Convert",inv:"Invoice",led:"Ledger",amount:"Amount",from:"From",to:"To",rates:"Exchange rates (1 USD =)",ratesNote:"Currency rates update automatically when you are online. Pi’s price varies between exchanges, so enter the rate you want to use. Rates you edit stay fixed.",refresh:"Use the latest rates",liveAt:"Rates from {d}",noLive:"Using saved rates",offline:"Offline.",biz:"Your business",client:"Client",desc:"Description",cur:"Currency",alt:"Also show in",make:"Create invoice",save:"Save to ledger",invoice:"Invoice",scan:"Scan to pay",billed:"Billed",collected:"Collected",showin:"Show totals in",empty:"No invoices yet. Create one in the Invoice tab.",paid:"Paid",unpaid:"Unpaid",del:"Delete",needAmt:"Enter an amount greater than zero.",saved:"Saved to ledger.",total:"Total",to_:"Client",equiv:"Equivalent",all:"All conversions",markPaid:"Mark as paid",paidUndo:"Paid · tap to undo",share:"Share invoice",copied:"Invoice copied. Paste it in a message."},
+fr:{tag:"Fixez vos prix en monnaie locale, voyez-les en Pi, suivez vos revenus.",conv:"Convertir",inv:"Facture",led:"Carnet",amount:"Montant",from:"De",to:"Vers",rates:"Taux de change (1 USD =)",ratesNote:"Les taux des monnaies se mettent à jour automatiquement en ligne. Le prix du Pi varie selon les plateformes : saisissez le taux que vous voulez utiliser. Les taux que vous modifiez restent fixes.",refresh:"Utiliser les derniers taux",liveAt:"Taux du {d}",noLive:"Taux enregistrés utilisés",offline:"Hors ligne.",biz:"Votre commerce",client:"Client",desc:"Description",cur:"Devise",alt:"Afficher aussi en",make:"Créer la facture",save:"Enregistrer au carnet",invoice:"Facture",scan:"Scanner pour payer",billed:"Facturé",collected:"Encaissé",showin:"Totaux en",empty:"Aucune facture. Créez-en une dans l’onglet Facture.",paid:"Payée",unpaid:"Impayée",del:"Supprimer",needAmt:"Saisissez un montant supérieur à zéro.",saved:"Enregistrée au carnet.",total:"Total",to_:"Client",equiv:"Équivalent",all:"Toutes les conversions",markPaid:"Marquer comme payée",paidUndo:"Payée · toucher pour annuler",share:"Partager la facture",copied:"Facture copiée. Collez-la dans un message."}
 };
 const CUR=["USD","PI","EUR","GBP","XOF","XAF","NGN","INR","JPY","CNY","RUB"];
 const N={PI:"π Pi",JPY:"JPY · ¥",CNY:"CNY · 元",RUB:"RUB · ₽",XOF:"XOF · CFA",XAF:"XAF · CFA"};
@@ -135,8 +136,8 @@ const conv=(a,f,to)=>a/R[f]*R[to];
 const opts=sel=>{const el=$(sel),v=el.value;el.innerHTML=CUR.map(c=>`<option value="${c}">${N[c]||c}</option>`).join("");if(v)el.value=v};
 function text(){document.documentElement.lang=lang;document.querySelectorAll("[data-i]").forEach(e=>e.textContent=t(e.dataset.i));document.querySelectorAll(".lang button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.l===lang))}
 function showTab(n){tab=n;document.querySelectorAll(".tabs button").forEach(b=>b.setAttribute("aria-selected",b.dataset.t===n));document.querySelectorAll(".panel").forEach(p=>p.classList.toggle("on",p.id==="p-"+n));if(n==="led")ledger()}
-function convert(){const a=parseFloat($("#c-amt").value)||0,f=$("#c-from").value,to=$("#c-to").value;$("#c-line").textContent=fmt(a,f)+" "+f+" =";$("#c-out").textContent=fmt(conv(a,f,to),to)+" "+to;$("#c-all").innerHTML=`<h2 class="allh">${t("all")}</h2>`+CUR.filter(c=>c!==f).map(c=>`<div class="ar"><span>${N[c]||c}</span><b>${fmt(conv(a,f,c),c)}</b></div>`).join("")}
-function ratesUI(){$("#rates").innerHTML=CUR.filter(c=>c!=="USD").map(c=>`<span>${c}</span><input type="number" inputmode="decimal" min="0" step="any" data-c="${c}" value="${R[c]}" aria-label="${c}">`).join("");$("#rates").querySelectorAll("input").forEach(i=>i.oninput=()=>{const v=parseFloat(i.value);if(v>0){R[i.dataset.c]=v;st.set("bp-rates",JSON.stringify(R));convert()}})}
+function convert(){const a=parseFloat($("#c-amt").value)||0,f=$("#c-from").value,to=$("#c-to").value;$("#c-line").textContent=fmt(a,f)+" "+f+" =";$("#c-out").textContent=fmt(conv(a,f,to),to)+" "+to;$("#c-all").innerHTML=`<h2 class="allh">${t("all")}</h2>`+CUR.filter(c=>c!==f).map(c=>`<div class="ar"><span>${N[c]||c}</span><b>${fmt(conv(a,f,c),c)}</b></div>`).join("");rstat()}
+function ratesUI(){$("#rates").innerHTML=CUR.filter(c=>c!=="USD").map(c=>`<span>${c}</span><input type="number" inputmode="decimal" min="0" step="any" data-c="${c}" value="${R[c]}" aria-label="${c}">`).join("");$("#rates").querySelectorAll("input").forEach(i=>i.oninput=()=>{const v=parseFloat(i.value);if(v>0){R[i.dataset.c]=v;M[i.dataset.c]=1;st.set("bp-rates",JSON.stringify(R));st.set("bp-man",JSON.stringify(M));convert()}})}
 function makeInvoice(){
  const amt=parseFloat($("#i-amt").value),msg=$("#i-msg");
  if(!(amt>0)){msg.className="msg err";msg.textContent=t("needAmt");return}
@@ -181,7 +182,29 @@ async function piSignIn(){
   const w=$("#who");w.textContent="\u03c0 "+String(d.user.username||"");w.hidden=false;
  }catch(e){}
 }
-ratesUI();text();convert();showTab("conv");piSignIn();
+let M={};try{M=JSON.parse(st.get("bp-man")||"{}")||{}}catch(e){}
+let liveAt=+st.get("bp-live-at")||0,online=null;
+function rstat(){
+ const d=liveAt?new Date(liveAt).toLocaleDateString(lang,{day:"numeric",month:"short",year:"numeric"}):"";
+ $("#rs").innerHTML=(online===false?t("offline")+" ":"")+(liveAt?t("liveAt").replace("{d}",d):t("noLive"))+' · <a href="https://www.exchangerate-api.com" target="_blank" rel="noopener">ExchangeRate-API</a>';
+}
+async function liveRates(force){
+ if(force){M={};st.set("bp-man","{}")}
+ if(!force&&Date.now()-(+st.get("bp-fetched")||0)<216e5){ratesUI();convert();return}
+ try{
+  const c=new AbortController(),tm=setTimeout(()=>c.abort(),8000);
+  const r=await fetch("https://open.er-api.com/v6/latest/USD",{signal:c.signal});clearTimeout(tm);
+  const d=await r.json();
+  if(d&&d.result==="success"&&d.rates){
+   CUR.forEach(k=>{if(k!=="USD"&&k!=="PI"&&d.rates[k]>0&&!M[k])R[k]=d.rates[k]});
+   liveAt=d.time_last_update_unix?d.time_last_update_unix*1000:Date.now();
+   st.set("bp-rates",JSON.stringify(R));st.set("bp-live-at",String(liveAt));st.set("bp-fetched",String(Date.now()));online=true;
+  }else online=false;
+ }catch(e){online=false}
+ ratesUI();convert();
+}
+$("#rf").onclick=()=>liveRates(true);
+ratesUI();text();convert();showTab("conv");piSignIn();liveRates();
 </script>
 </body>
 </html>
