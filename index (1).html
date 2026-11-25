@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="connect-src 'self' https://socialchain.app https://backend.appstudio-u7cm9zhmha0ruwv8.piappengine.com">
+<script src="https://sdk.minepi.com/pi-sdk.js"></script>
+<title>Billpad</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap">
+<style>
+:root{--bg:#F4F5F9;--sf:#fff;--ink:#1C1B2E;--mu:#63627A;--ln:#DCDCE8;--ac:#5A3D9E;--on:#fff;--gold:#E3A72F;--ok:#1F7A57;--bad:#B3261E;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#15141F;--sf:#1F1E2C;--ink:#ECEBF5;--mu:#A09FB6;--ln:#35344C;--ac:#B39CF0;--on:#17132A;--ok:#4FC79A;--bad:#F2877F;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#15141F;--sf:#1F1E2C;--ink:#ECEBF5;--mu:#A09FB6;--ln:#35344C;--ac:#B39CF0;--on:#17132A;--ok:#4FC79A;--bad:#F2877F;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.5 "Bricolage Grotesque",system-ui,sans-serif}
+main{max-width:560px;margin:0 auto;padding:20px 16px 48px}
+header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:18px}
+h1{margin:0;font-size:2rem;font-weight:800;letter-spacing:-.02em;line-height:1.1}
+h1 i{font-style:normal;color:var(--gold)}
+.tag{margin:4px 0 0;color:var(--mu);font-size:.9rem;max-width:30ch}
+.lang{display:flex;border:1px solid var(--ln);border-radius:8px;overflow:hidden;flex:none}
+.lang button{border:0;background:none;color:var(--mu);padding:8px 12px;font:600 .85rem inherit;font-family:inherit;cursor:pointer;min-height:40px}
+.lang button[aria-pressed="true"]{background:var(--ac);color:var(--on)}
+.tabs{display:grid;grid-template-columns:repeat(3,1fr);border-bottom:2px solid var(--ln);margin-bottom:18px}
+.tabs button{background:none;border:0;border-bottom:3px solid transparent;margin-bottom:-2px;padding:12px 4px;font:600 1rem inherit;font-family:inherit;color:var(--mu);cursor:pointer}
+.tabs button[aria-selected="true"]{color:var(--ink);border-color:var(--gold)}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--ac);outline-offset:2px}
+.panel{display:none}.panel.on{display:block}
+label{display:block;font-weight:600;font-size:.9rem;margin:14px 0 6px}
+input,select{width:100%;min-height:46px;padding:10px 12px;border:1px solid var(--ln);border-radius:8px;background:var(--sf);color:var(--ink);font:inherit}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.big{margin:20px 0 4px;padding:18px;border-radius:10px;background:var(--ac);color:var(--on)}
+.big small{display:block;opacity:.85}
+.big b{font-size:2rem;font-weight:800;letter-spacing:-.02em;word-break:break-word}
+.note{color:var(--mu);font-size:.85rem;margin:8px 0}
+details{margin-top:22px;border-top:1px solid var(--ln);padding-top:12px}
+summary{font-weight:600;cursor:pointer;min-height:32px}
+.rates{display:grid;grid-template-columns:70px 1fr;gap:8px;align-items:center;margin-top:10px}
+.btn{margin-top:18px;width:100%;min-height:48px;border:0;border-radius:8px;background:var(--ac);color:var(--on);font:700 1rem inherit;font-family:inherit;cursor:pointer}
+.btn.alt{background:none;color:var(--ac);border:2px solid var(--ac)}
+.msg{min-height:1.4em;margin:10px 0 0;font-size:.9rem;font-weight:600}
+.msg.err{color:var(--bad)}.msg.ok{color:var(--ok)}
+.inv{margin-top:20px;border:1px solid var(--ln);background:var(--sf);border-radius:10px;padding:18px}
+.inv h2{margin:0 0 2px;font-size:1.25rem}
+.inv .meta{color:var(--mu);font-size:.85rem;margin-bottom:12px}
+.inv dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:6px 14px}
+.inv dt{color:var(--mu)}.inv dd{margin:0;text-align:right;word-break:break-word}
+.inv .tot{font-size:1.5rem;font-weight:800;margin:14px 0 4px;text-align:right}
+.qr{display:flex;align-items:center;gap:14px;margin-top:14px;border-top:1px dashed var(--ln);padding-top:14px}
+.qr #qr{background:#fff;padding:6px;border-radius:6px;line-height:0}
+.sum{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0}
+.sum div{border:1px solid var(--ln);background:var(--sf);border-radius:10px;padding:12px}
+.sum small{color:var(--mu);display:block}.sum b{font-size:1.2rem;word-break:break-word}
+.item{display:grid;grid-template-columns:1fr auto;gap:2px 10px;border-bottom:1px solid var(--ln);padding:12px 0}
+.item .a{text-align:right;font-weight:600}
+.item .s{grid-column:1/3;display:flex;gap:8px;margin-top:6px}
+.item .s button{flex:1;min-height:40px;border-radius:8px;border:1px solid var(--ln);background:none;color:var(--ink);font:inherit;font-size:.85rem;cursor:pointer}
+.item .s button.p{border-color:var(--ok);color:var(--ok);font-weight:600}
+.empty{color:var(--mu);padding:24px 0;text-align:center}
+.allh{font-size:1rem;margin:22px 0 4px}
+.ar{display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid var(--ln)}
+.ar b{text-align:right;word-break:break-word}
+</style>
+</head>
+<body>
+<main>
+<header>
+ <div><h1>Bill<i>pad</i></h1><p class="tag" data-i="tag"></p><p class="tag" id="who" hidden></p></div>
+ <div class="lang" role="group" aria-label="Language"><button data-l="en">EN</button><button data-l="fr">FR</button></div>
+</header>
+
+<div class="tabs" role="tablist">
+ <button role="tab" data-t="conv" data-i="conv"></button>
+ <button role="tab" data-t="inv" data-i="inv"></button>
+ <button role="tab" data-t="led" data-i="led"></button>
+</div>
+
+<section class="panel" id="p-conv">
+ <label for="c-amt" data-i="amount"></label>
+ <input id="c-amt" type="number" inputmode="decimal" min="0" step="any" value="100">
+ <div class="row">
+  <div><label for="c-from" data-i="from"></label><select id="c-from"></select></div>
+  <div><label for="c-to" data-i="to"></label><select id="c-to"></select></div>
+ </div>
+ <div class="big" aria-live="polite"><small id="c-line"></small><b id="c-out"></b></div>
+ <div id="c-all"></div>
+ <details>
+  <summary data-i="rates"></summary>
+  <p class="note" data-i="ratesNote"></p>
+  <div class="rates" id="rates"></div>
+ </details>
+</section>
+
+<section class="panel" id="p-inv">
+ <label for="i-biz" data-i="biz"></label><input id="i-biz" type="text" autocomplete="organization">
+ <label for="i-cli" data-i="client"></label><input id="i-cli" type="text">
+ <label for="i-desc" data-i="desc"></label><input id="i-desc" type="text">
+ <div class="row">
+  <div><label for="i-amt" data-i="amount"></label><input id="i-amt" type="number" inputmode="decimal" min="0" step="any"></div>
+  <div><label for="i-cur" data-i="cur"></label><select id="i-cur"></select></div>
+ </div>
+ <label for="i-alt" data-i="alt"></label><select id="i-alt"></select>
+ <button class="btn" id="i-make" data-i="make"></button>
+ <p class="msg" id="i-msg" role="status"></p>
+ <div id="i-view"></div>
+</section>
+
+<section class="panel" id="p-led">
+ <label for="l-cur" data-i="showin"></label><select id="l-cur"></select>
+ <div class="sum"><div><small data-i="billed"></small><b id="l-bill"></b></div><div><small data-i="collected"></small><b id="l-coll"></b></div></div>
+ <div id="l-list"></div>
+</section>
+<p style="text-align:center;margin:28px 0 0;font-size:.85rem"><a href="privacy.html" style="color:var(--mu)">Privacy · Confidentialité</a></p>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+const $=s=>document.querySelector(s);
+const T={
+en:{tag:"Price in your local currency, see it in Pi, track your income.",conv:"Convert",inv:"Invoice",led:"Ledger",amount:"Amount",from:"From",to:"To",rates:"Exchange rates (1 USD =)",ratesNote:"Rates are editable and not live. Enter your own before relying on them.",biz:"Your business",client:"Client",desc:"Description",cur:"Currency",alt:"Also show in",make:"Create invoice",save:"Save to ledger",invoice:"Invoice",scan:"Scan to pay",billed:"Billed",collected:"Collected",showin:"Show totals in",empty:"No invoices yet. Create one in the Invoice tab.",paid:"Paid",unpaid:"Unpaid",del:"Delete",needAmt:"Enter an amount greater than zero.",saved:"Saved to ledger.",total:"Total",to_:"Client",equiv:"Equivalent",all:"All conversions",markPaid:"Mark as paid",paidUndo:"Paid · tap to undo",share:"Share invoice",copied:"Invoice copied. Paste it in a message."},
+fr:{tag:"Fixez vos prix en monnaie locale, voyez-les en Pi, suivez vos revenus.",conv:"Convertir",inv:"Facture",led:"Carnet",amount:"Montant",from:"De",to:"Vers",rates:"Taux de change (1 USD =)",ratesNote:"Les taux sont modifiables et non actualisés. Saisissez les vôtres avant de vous y fier.",biz:"Votre commerce",client:"Client",desc:"Description",cur:"Devise",alt:"Afficher aussi en",make:"Créer la facture",save:"Enregistrer au carnet",invoice:"Facture",scan:"Scanner pour payer",billed:"Facturé",collected:"Encaissé",showin:"Totaux en",empty:"Aucune facture. Créez-en une dans l’onglet Facture.",paid:"Payée",unpaid:"Impayée",del:"Supprimer",needAmt:"Saisissez un montant supérieur à zéro.",saved:"Enregistrée au carnet.",total:"Total",to_:"Client",equiv:"Équivalent",all:"Toutes les conversions",markPaid:"Marquer comme payée",paidUndo:"Payée · toucher pour annuler",share:"Partager la facture",copied:"Facture copiée. Collez-la dans un message."}
+};
+const CUR=["USD","PI","EUR","GBP","XOF","XAF","NGN","INR","JPY","CNY","RUB"];
+const N={PI:"π Pi",JPY:"JPY · ¥",CNY:"CNY · 元",RUB:"RUB · ₽",XOF:"XOF · CFA",XAF:"XAF · CFA"};
+let R={USD:1,EUR:.92,GBP:.79,XOF:600,XAF:600,NGN:1500,INR:83,JPY:150,CNY:7.2,RUB:90,PI:17.9};
+let L=[],lang="en",tab="conv",cur=null;
+const mem={};
+const st={get(k){try{return localStorage.getItem(k)}catch(e){return mem[k]||null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){mem[k]=v}}};
+try{const r=JSON.parse(st.get("bp-rates")||"null");if(r)R=Object.assign(R,r);L=JSON.parse(st.get("bp-ledger")||"[]");const g=st.get("bp-lang");if(g)lang=g}catch(e){}
+if(!st.get("bp-lang")&&/^fr/i.test(navigator.language||""))lang="fr";
+const t=k=>T[lang][k];
+const fmt=(n,c)=>new Intl.NumberFormat(lang,{maximumFractionDigits:["XOF","XAF","NGN","JPY"].includes(c)?0:2}).format(n);
+const conv=(a,f,to)=>a/R[f]*R[to];
+const opts=sel=>{const el=$(sel),v=el.value;el.innerHTML=CUR.map(c=>`<option value="${c}">${N[c]||c}</option>`).join("");if(v)el.value=v};
+function text(){document.documentElement.lang=lang;document.querySelectorAll("[data-i]").forEach(e=>e.textContent=t(e.dataset.i));document.querySelectorAll(".lang button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.l===lang))}
+function showTab(n){tab=n;document.querySelectorAll(".tabs button").forEach(b=>b.setAttribute("aria-selected",b.dataset.t===n));document.querySelectorAll(".panel").forEach(p=>p.classList.toggle("on",p.id==="p-"+n));if(n==="led")ledger()}
+function convert(){const a=parseFloat($("#c-amt").value)||0,f=$("#c-from").value,to=$("#c-to").value;$("#c-line").textContent=fmt(a,f)+" "+f+" =";$("#c-out").textContent=fmt(conv(a,f,to),to)+" "+to;$("#c-all").innerHTML=`<h2 class="allh">${t("all")}</h2>`+CUR.filter(c=>c!==f).map(c=>`<div class="ar"><span>${N[c]||c}</span><b>${fmt(conv(a,f,c),c)}</b></div>`).join("")}
+function ratesUI(){$("#rates").innerHTML=CUR.filter(c=>c!=="USD").map(c=>`<span>${c}</span><input type="number" inputmode="decimal" min="0" step="any" data-c="${c}" value="${R[c]}" aria-label="${c}">`).join("");$("#rates").querySelectorAll("input").forEach(i=>i.oninput=()=>{const v=parseFloat(i.value);if(v>0){R[i.dataset.c]=v;st.set("bp-rates",JSON.stringify(R));convert()}})}
+function makeInvoice(){
+ const amt=parseFloat($("#i-amt").value),msg=$("#i-msg");
+ if(!(amt>0)){msg.className="msg err";msg.textContent=t("needAmt");return}
+ msg.textContent="";
+ const c=$("#i-cur").value,alt=$("#i-alt").value,n="INV-"+String(L.length+1).padStart(3,"0");
+ cur={num:n,biz:$("#i-biz").value.trim(),client:$("#i-cli").value.trim(),desc:$("#i-desc").value.trim(),amt,cur:c,date:new Date().toISOString().slice(0,10),paid:false};
+ const esc=s=>s.replace(/[&<>]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[m]));
+ const eq=alt!==c?`<dt>${t("equiv")}</dt><dd>${fmt(conv(amt,c,alt),alt)} ${alt}</dd>`:"";
+ $("#i-view").innerHTML=`<div class="inv"><h2>${esc(cur.biz)||"—"}</h2><div class="meta">${t("invoice")} ${n} · ${cur.date}</div><dl><dt>${t("to_")}</dt><dd>${esc(cur.client)||"—"}</dd><dt>${t("desc")}</dt><dd>${esc(cur.desc)||"—"}</dd>${eq}</dl><div class="tot">${fmt(amt,c)} ${c}</div><div class="qr"><div id="qr"></div><span class="note">${t("scan")}</span></div></div><button class="btn alt" id="i-save">${t("save")}</button><button class="btn alt" id="i-share">${t("share")}</button>`;
+ try{new QRCode($("#qr"),{text:[cur.biz,n,amt+" "+c].join("|"),width:112,height:112})}catch(e){$("#qr").parentNode.remove()}
+ $("#i-share").onclick=shareInv;
+ $("#i-save").onclick=()=>{L.push(cur);st.set("bp-ledger",JSON.stringify(L));$("#i-view").innerHTML="";["#i-cli","#i-desc","#i-amt"].forEach(s=>$(s).value="");msg.className="msg ok";msg.textContent=t("saved")}
+}
+async function shareInv(){const x=cur,tx=[x.biz||"Billpad",t("invoice")+" "+x.num,x.client,x.desc,fmt(x.amt,x.cur)+" "+x.cur].filter(Boolean).join("\n");try{if(navigator.share){await navigator.share({text:tx});return}}catch(e){if(e&&e.name==="AbortError")return}try{await navigator.clipboard.writeText(tx);$("#i-msg").className="msg ok";$("#i-msg").textContent=t("copied")}catch(e){}}
+function ledger(){
+ const sc=$("#l-cur").value,tot=L.reduce((a,x)=>a+conv(x.amt,x.cur,sc),0),col=L.filter(x=>x.paid).reduce((a,x)=>a+conv(x.amt,x.cur,sc),0);
+ $("#l-bill").textContent=fmt(tot,sc)+" "+sc;$("#l-coll").textContent=fmt(col,sc)+" "+sc;
+ const box=$("#l-list");
+ if(!L.length){box.innerHTML=`<p class="empty">${t("empty")}</p>`;return}
+ box.innerHTML=L.map((x,i)=>`<div class="item"><div><b>${x.num}</b><br><span class="note">${x.date}</span></div><div class="a">${fmt(x.amt,x.cur)} ${x.cur}</div><div class="s"><button class="${x.paid?"p":""}" data-p="${i}">${x.paid?t("paidUndo"):t("markPaid")}</button><button data-d="${i}">${t("del")}</button></div></div>`).reverse().join("");
+ box.querySelectorAll("[data-p]").forEach(b=>b.onclick=()=>{L[b.dataset.p].paid=!L[b.dataset.p].paid;st.set("bp-ledger",JSON.stringify(L));ledger()});
+ box.querySelectorAll("[data-d]").forEach(b=>b.onclick=()=>{L.splice(b.dataset.d,1);st.set("bp-ledger",JSON.stringify(L));ledger()});
+}
+["#c-from","#c-to","#i-cur","#i-alt","#l-cur"].forEach(opts);
+$("#c-to").value="PI";$("#i-alt").value="PI";$("#l-cur").value="USD";
+document.querySelectorAll(".lang button").forEach(b=>b.onclick=()=>{lang=b.dataset.l;st.set("bp-lang",lang);text();convert();if(tab==="led")ledger();$("#i-view").innerHTML=""});
+document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>showTab(b.dataset.t));
+["#c-amt","#c-from","#c-to"].forEach(s=>$(s).oninput=convert);
+$("#l-cur").onchange=ledger;$("#i-make").onclick=makeInvoice;
+const PI_LOGIN="https://backend.appstudio-u7cm9zhmha0ruwv8.piappengine.com/pi/auth/v1/login";
+const piState={session:null,user:null};
+async function piSignIn(){
+ if(!window.Pi)return;
+ try{
+  await Pi.init({version:"2.0"});
+  const a=await Pi.authenticate(["username"],function(){});
+  const r=await fetch(PI_LOGIN,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({accessToken:a.accessToken})});
+  if(!r.ok)return;
+  const d=await r.json();
+  if(!d||!d.user||!d.sessionToken)return;
+  piState.session=d.sessionToken;piState.user=d.user;
+  const w=$("#who");w.textContent="\u03c0 "+String(d.user.username||"");w.hidden=false;
+ }catch(e){}
+}
+ratesUI();text();convert();showTab("conv");piSignIn();
+</script>
+</body>
+</html>
